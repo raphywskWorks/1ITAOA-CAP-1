@@ -1,5 +1,47 @@
 import math
 import os
+import csv
+
+cultures = ['milho', 'laranja']
+products = {'milho': 'Fosfato Monoamônico', 'laranja': 'Diclorofenoxiacético'}
+productsQtd = {'Fosfato Monoamônico': 5, 'Diclorofenoxiacético': 0.15}
+formats = {'milho': 'retangulo', 'laranja': 'triangulo'}
+streets = {'milho': 1, 'laranja': 2}
+spaceBetweenStreets = 1
+calculatedPlantingAreas = []
+
+logo = welcomeMessage = '''___________                        _________      .__          __  .__                      
+\_   _____/____ _______  _____    /   _____/ ____ |  |  __ ___/  |_|__| ____   ____   ______
+ |    __) \__  \\_  __ \/     \   \_____  \ /  _ \|  | |  |  \   __\  |/  _ \ /    \ /  ___/
+ |     \   / __ \|  | \/  Y Y  \  /        (  <_> )  |_|  |  /|  | |  (  <_> )   |  \\___ \ 
+ \___  /  (____  /__|  |__|_|  / /_______  /\____/|____/____/ |__| |__|\____/|___|  /____  >
+     \/        \/            \/          \/                                       \/     \/ 
+'''
+active = True
+phase = 0
+currentCulture = ''
+currentArea = 0
+
+def resetCurrentStatus():
+    global currentCulture, currentArea
+    currentCulture = ''
+    currentArea = 0
+
+def setCurrentStatus(culture, area):
+    global currentCulture, currentArea
+    currentCulture = culture
+    currentArea = area
+
+
+def showInvalidInput():
+    print('Entrada inválida! Tente novamente.')
+
+def clearTerminal():
+    system = os.name
+    if system == 'nt':
+        os.system('cls')
+        return
+    os.system('clear')
 
 def calcAreaAvailable(area, figure, streetSize, spaceBetweenStreets):
     if figure == 'retangulo':
@@ -18,142 +60,195 @@ def calcAreaAvailable(area, figure, streetSize, spaceBetweenStreets):
         areaAvailable = totalArea - (streetsQtd * streetSize * base / totalArea)
         return {'plantingArea': areaAvailable, 'numberOfStreets': streetsQtd}
 
-# nome, produto aplicado, figura geométrica para plantio, largura da rua, espaço entre ruas
-cultures = [
-    ['milho', 'Fosfato Monoamônico', 'retangulo', 1, 1],
-    ['laranja', 'Diclorofenoxiacético', 'triangulo', 2, 1],
-]
+def onInit():
+    clearTerminal()
+    print (welcomeMessage + '\n')
+    print('Bem vindo a Tech Farm Solutions!')
+    print('Vamos planejar um plantio eficiente?')
+    print('Tecle enter para começar.')
+    input()
 
-# Quantidade necessária de produto, em ml por m2
-products = {'Fosfato Monoamônico': 5, 'Diclorofenoxiacético': 0.15}
+def getCultureIndex():
+    userInput = 0
+    try:
+        print('Digite 1 para milho ou 2 para laranja ou digite 0 para sair.')
+        userInput = int(input('Selecione uma cultura: '))
+    except Exception as e:
+        showInvalidInput()
+        return -1
+    
+    return userInput
 
-# Indice do produto, área disponível em m2.
-calculatedPlantingAreas = []
+def getTotalArea():
+    totalArea = 0
+    try:
+        print('Digite a área total disponível para plantio em metros quadrados ou digite 0 para sair')
+        userInput = int(input('Area total: '))
+        totalArea = userInput
+    except Exception as e:
+        showInvalidInput()
+        return -1
+    return totalArea
 
-welcomeMessage = '''
+def getProductQtd(product, area):
+    productMultiplier = productsQtd[product]
+    return area * productMultiplier
 
-___________                        _________      .__          __  .__                      
-\_   _____/____ _______  _____    /   _____/ ____ |  |  __ ___/  |_|__| ____   ____   ______
- |    __) \__  \\_  __ \/     \   \_____  \ /  _ \|  | |  |  \   __\  |/  _ \ /    \ /  ___/
- |     \   / __ \|  | \/  Y Y  \  /        (  <_> )  |_|  |  /|  | |  (  <_> )   |  \\___ \ 
- \___  /  (____  /__|  |__|_|  / /_______  /\____/|____/____/ |__| |__|\____/|___|  /____  >
-     \/        \/            \/          \/                                       \/     \/ 
+def setCalculatedPlantingArea(index = -1):
+    global calculatedPlantingAreas, currentCulture, currentArea, formats, streets, spaceBetweenStreets
+    streetSize = streets[currentCulture]
+    currentFormat = formats[currentCulture]
+    calc = calcAreaAvailable(currentArea, currentFormat, streetSize, spaceBetweenStreets)
+    newData = {
+            'culture': currentCulture, 
+            'totalArea': currentArea,
+            'plantingArea': round(calc['plantingArea'], 2) ,
+            'numberOfStreets': calc['numberOfStreets'],
+            'product': products[currentCulture],
+            'productQtd': round(getProductQtd(products[currentCulture], calc['plantingArea']), 2)
+        }
 
-    \n
-    Bem vindo a FarmTech Solutions!
-    \n
-    Aqui você consegue planejar o seu plantio com muito mais eficiência!
-    \n
-    Vamos começar?
-    \n\n\n
-'''
-
-
-option = 0
-currentCultureCalculated = 0
-phases = [
-    {'text': welcomeMessage},
-    {'text': 'Escolha uma cultura: ', 'helper': 'Digite 1 para milho e 2 para laranja ou digite 0 para sair'},
-    {'text': 'Insira a área disponível total: ', 'helper': 'Digite o valor da area em metros quadrados, ou digite 0 para sair'},
-    {'text': 'Calculo finalizado!', 'helper': ''},
-    {'text': 'Escolha uma nova opção: ', 'helper': 'Digite 1 para realizar um novo calculo, 2 para editar um calculo já realizado ou 0 para sair'}
-]
-
-def clearTerminal():
-    system = os.name
-    if system == 'nt':
-        os.system('cls')
-        return
-    os.system('clear')
-
-def addCulture(culture):
-    calculatedPlantingAreas.append([culture])
-    print(f'A cultura escolhida foi {cultures[culture - 1][0]}!\n')
-
-def addTotalArea(area):
-    arrayIndex = len(calculatedPlantingAreas) - 1
-    arraySize = len(calculatedPlantingAreas[arrayIndex])
-    if arraySize < 2:
-        calculatedPlantingAreas[arrayIndex].append(area)
+    if index == -1:
+        calculatedPlantingAreas.append(newData)
         return
     
-    calculatedPlantingAreas[arrayIndex][1] = area
+    calculatedPlantingAreas[index] = newData
 
-def printHelper():
-    print(phases[option]['helper'])
-    print('\n')
+def showResult(data):
+    result = f'''
+Cultura: {data['culture']}
+area total: {data['totalArea']}
+area disponível para plantio: {data['plantingArea']}
+quantidade de ruas: {data['numberOfStreets']}
+aplicação do produto: {data['product']}
+quantidade de produto necessário: {data['productQtd']}
+'''
+    print(result)
 
-def getUserOption():
-    userOption = input(phases[option]['text'])
-    return userOption
+def getNewOption():
+    option = 0
+    try:
+        userInput = int(input('\nDigite 1 para inserir um novo registro\nDigite 2 para exibir os dados\nDigite 3 para editar um registro\nDigite 4 para exportar os dados para um arquivo CSV\nDigite 0 para sair\n'))
+        option = userInput
+    except Exception as e:
+        showInvalidInput
+        return -1
+    return option
 
-def handleInvalidInput():
-    clearTerminal()
-    print('\nValor digitado é inválido.\n')
+def showResumedData():
+    if len(calculatedPlantingAreas) == 0: return
+    count = 1
+    for i in calculatedPlantingAreas:
+        option = i
+        print(f"Opção {count} - Cultura: {option['culture']}, area total: {option['totalArea']}")
+        count += 1
 
-def showCalc():
-    calculatedAreaResume = calculatedPlantingAreas[currentCultureCalculated]
-    culture = cultures[calculatedAreaResume[0] - 1]
-    calculated = calcAreaAvailable(calculatedAreaResume[1], culture[2], culture[3], culture[4])
-    productCalculated = products[culture[1]] * calculated['plantingArea']
+def getCalculatedPlantingAreaIndex():
+    option = 0
+    try:
+        userInput = int(input('Digite a opção que deseja editar ou digite 0 para sair: '))
+        option = userInput
+    except Exception as e:
+        showInvalidInput()
+        return -1
+    
+    return option
 
-    userOutput = f'''A cultura escolhida foi {culture[0]}, com área total disponível para plantio de {calculatedAreaResume[1]} metros quadrados.\n
-O formato da área deve ser de um {culture[2]}.\n
-O total da área efetiva plantada é de {round(calculated['plantingArea'], 2)} metros quadrados, com {calculated['numberOfStreets']} ruas disponíveis para plantio.\n
-A aplicação de {round(productCalculated, 2)} ml de {culture[1]} será necessária.
-     '''
+def exportData():
+    global calculatedPlantingAreas
+    fileName = 'dados.csv'
 
-    print (userOutput)
+    with open(fileName, mode='w', newline='', encoding='utf-8') as file:
+        columnNames = calculatedPlantingAreas[0].keys()
+        writer = csv.DictWriter(file, fieldnames=columnNames)
+        writer.writeheader()
+        writer.writerows(calculatedPlantingAreas)
 
-while option >= 0:
-    match option:
+    print(f"Dados exportados com sucesso!\n Verifique o arquivo dados.csv")
+
+while active:
+    match phase:
         case 0:
-            clearTerminal()
-            print(phases[option]['text'])
-            option += 1
+            onInit()
+            phase = 1
         case 1:
-            printHelper()
-            try:
-                culture = int(getUserOption())
-                if ( not culture ):
-                    option = -1
-                    break
-                addCulture(culture)
-                option += 1
-            except Exception as e:
-                handleInvalidInput()
-            
+            userInput = getCultureIndex()
+            if userInput == -1: continue
+            if not userInput :
+                active = False
+                continue
+            if userInput not in [i + 1 for i, _ in enumerate(cultures)]:
+                showInvalidInput()
+                continue
+            currentCulture = cultures[userInput - 1]
+            phase = 2
         case 2:
-            clearTerminal()
-            printHelper()
-            try:
-                area = float(getUserOption())
-                if ( not area ):
-                    option = -1
-                    break
-                addTotalArea(area)    
-                option += 1
-            except Exception as e:
-                handleInvalidInput()
-
+            userInput = getTotalArea()
+            if userInput == -1: continue
+            if userInput == 0:
+                active = False
+                continue
+            currentArea = userInput
+            currentIndex = len(calculatedPlantingAreas) - 1
+            setCalculatedPlantingArea()
+            showResult(calculatedPlantingAreas[currentIndex])
+            resetCurrentStatus()
+            phase = 3
         case 3:
-            clearTerminal()
-            showCalc()
-            print(calculatedPlantingAreas)
-            option += 1
-        case 4:
-            printHelper()
-            try:
-                userNewOption = int(getUserOption())
-                if ( not userNewOption ):
-                    option = -1
-                    break
+            userInput = getNewOption()
+            if userInput == -1: continue
+            if userInput == 0:
+                active = False
+                continue
+            if userInput == 1:
+                clearTerminal()
+                phase = 1
+                continue
+            if userInput == 2:
+                clearTerminal()
+                for i in calculatedPlantingAreas:
+                    showResult(i)
+                continue
+            if userInput == 3:
+                clearTerminal()
+                showResumedData()
+                userInput = getCalculatedPlantingAreaIndex()
+                if userInput == -1: continue
+                if userInput == 0:
+                    active = False
+                    continue
+                if userInput < 0 or userInput > len(calculatedPlantingAreas):
+                    showInvalidInput()
+                    continue
+                index = userInput - 1
 
-                if ( userNewOption == 1 ): 
-                    currentCultureCalculated = len(calculatedPlantingAreas)
-                    option = 1
-                if ( userNewOption == 2 ):
-                   print('editar')
-                   # Criar função para editar os arrays. 
-            except:
-                handleInvalidInput()
+                # Get culture
+                culture = getCultureIndex()
+                if culture == -1: continue
+                if not culture :
+                    active = False
+                    continue
+                if culture not in [i + 1 for i, _ in enumerate(cultures)]:
+                    showInvalidInput()
+                    continue
+                currentCulture = cultures[culture - 1]
+
+                # Get area
+                area = getTotalArea()
+                if area == -1: continue
+                if area == 0:
+                    active = False
+                    continue
+                currentArea = area
+
+                # Calculate data and show results
+                setCalculatedPlantingArea(index)
+                showResult(calculatedPlantingAreas[index])
+                resetCurrentStatus()
+            if userInput == 4: phase = 4
+        case 4:
+            clearTerminal()
+            exportData()
+            print('Tecle enter para continuar')
+            input()
+            phase = 3
