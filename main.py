@@ -191,6 +191,8 @@ while active:
             currentArea = userInput
             currentIndex = len(calculatedPlantingAreas) - 1
             setCalculatedPlantingArea()
+            currentIndex = len(calculatedPlantingAreas) - 1
+            print(f"==================> Index: {len(calculatedPlantingAreas)}")
             showResult(calculatedPlantingAreas[currentIndex])
             resetCurrentStatus()
             phase = 3
