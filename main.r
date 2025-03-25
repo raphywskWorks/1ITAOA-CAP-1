@@ -1,3 +1,5 @@
+options(repos = c(CRAN = "https://cran.r-project.org/"))
+
 install.packages("httr")
 install.packages("jsonlite")
 
@@ -23,7 +25,7 @@ caption <- function(){
     message <- paste("\nSeja bem-vindo ao Painel Meteorológico! Aqui você pode consultar informações climáticas de qualquer cidade do mundo.\n",
                       "Pressione Enter para começar...\n")
     cat(message)
-    inputPause()
+    invisible(readLines("stdin", n = 1))
 }
 
 
@@ -39,16 +41,16 @@ styleMessage <- function(city){
 
 
 inputPause <- function(){
-    readline()
+    sttats <- readline()
 }
 
 
 clear_console <- function(){
-    if (Sys.info()[['sysname']] == "Windows") {
-        system("cls")
-    } else {
-        system("clear")
-    }
+    # if (Sys.info()[['sysname']] == "Windows") {
+    #     system("cls")
+    # } else {
+    #     system("clear")
+    # }
 }
 
 
@@ -62,7 +64,7 @@ repeat {
     
     repeat {
         userInitMessage()
-        city <- readline()
+        city <- trimws(readLines("stdin", n = 1))
         
         if (tolower(city) == "sair") {
             cat("\nEncerrando o programa... Até logo!\n")
@@ -99,7 +101,7 @@ repeat {
 
     
     cat("\nDeseja consultar outra cidade? (s/n): ")
-    resposta <- readline()
+    resposta <- readLines("stdin", n = 1)
     
     if (tolower(resposta) != "s") {
         cat("\nEncerrando o programa... Até logo!\n")
