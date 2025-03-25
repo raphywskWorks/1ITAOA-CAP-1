@@ -128,7 +128,7 @@ quantidade de produto necessário: {data['productQtd']}
 def getNewOption():
     option = 0
     try:
-        userInput = int(input('\nDigite 1 para inserir um novo registro\nDigite 2 para exibir os dados\nDigite 3 para editar um registro\nDigite 4 para exportar os dados para um arquivo CSV\nDigite 0 para sair\n'))
+        userInput = int(input('\nDigite 1 para inserir um novo registro\nDigite 2 para exibir os dados\nDigite 3 para editar um registro\nDigite 4 para exportar os dados para um arquivo CSV\nDigite 5 para deletar um registro\nDigite 0 para sair\n'))
         option = userInput
     except Exception as e:
         showInvalidInput
@@ -143,10 +143,10 @@ def showResumedData():
         print(f"Opção {count} - Cultura: {option['culture']}, area total: {option['totalArea']}")
         count += 1
 
-def getCalculatedPlantingAreaIndex():
+def getCalculatedPlantingAreaIndex(mode = "editar"):
     option = 0
     try:
-        userInput = int(input('Digite a opção que deseja editar ou digite 0 para sair: '))
+        userInput = int(input(f"Digite a opção que deseja {mode} ou digite 0 para sair: "))
         option = userInput
     except Exception as e:
         showInvalidInput()
@@ -248,9 +248,35 @@ while active:
                 showResult(calculatedPlantingAreas[index])
                 resetCurrentStatus()
             if userInput == 4: phase = 4
+
+            if userInput == 5: phase = 5
         case 4:
             clearTerminal()
             exportData()
             print('Tecle enter para continuar')
             input()
             phase = 3
+        case 5:
+            clearTerminal()
+            showResumedData()
+            userInput = getCalculatedPlantingAreaIndex("deletar")
+            if userInput == -1: continue
+            if userInput == 0:
+                active = False
+                continue
+            if userInput < 0 or userInput > len(calculatedPlantingAreas):
+                showInvalidInput()
+                continue
+            index = userInput - 1
+
+            removed = calculatedPlantingAreas.pop(index)
+            print("\nDados removidos com sucesso.")
+            showResult(removed)
+            print("\nTecle enter para continuar")
+            input()
+            clearTerminal()
+            phase = 3
+
+            
+
+
